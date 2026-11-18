@@ -1,37 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from app.api.uploads import router as uploads_router
+from app.config import settings
 
-
-class Settings(BaseSettings):
-    app_name: str = "AI Data Analyst Agent"
-    cors_origins: str = "http://localhost:3000"
-    model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
-
-
-settings = Settings()
-
-app = FastAPI(
-    title=settings.app_name,
-    description="AI-powered data analysis with RAG, tools, MCP and LangGraph.",
-    version="0.1.0",
-)
-
-origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+app = FastAPI(title=settings.app_name,
+              description="AI data analysis with document ingestion, RAG, tools, MCP and LangGraph.",
+              version="0.2.0")
+origins = [x.strip() for x in settings.cors_origins.split(",") if x.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True,
+                   allow_methods=["*"], allow_headers=["*"])
+app.include_router(uploads_router)
 
 @app.get("/", tags=["system"])
-def root() -> dict[str, str]:
+def root():
     return {"name": settings.app_name, "status": "running", "docs": "/docs"}
 
-
 @app.get("/health", tags=["system"])
-def health() -> dict[str, str]:
+def health():
     return {"status": "ok", "service": "backend"}
